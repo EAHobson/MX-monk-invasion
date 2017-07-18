@@ -36,20 +36,20 @@ We cleaned these data and deleted obvious double-reporting events (i.e. if the s
 
 cities.frLIT.csv = list of cities for which there are scientific reports of sightings
 
-LIT_citationMASTER = list of all sources of scientific reports of sightings
+LIT_citationMASTER.csv = list of all sources of scientific reports of sightings
 
-LIT_locationsXyears_citations_TRIMMED = list of all scientific reports of sightings by city and year
+LIT_locationsXyears_citations_TRIMMED.csv = list of all scientific reports of sightings by city and year
 
 MEX_adm1.rds = shape files for Mexican states (available here: http://www.gadm.org/download -- level 1)
 
-mx.states.attributes = attributes of Mexican states
+mx.states.attributes.txt = attributes of Mexican states
 
-state.names = names of Mexican states, with and without accents (for matching to Mexican state shapefiles)
+state.names.csv = names of Mexican states, with and without accents (for matching to Mexican state shapefiles)
 
-reg7.master = attributes of each geographic region (for plotting by color, etc.)
+reg7.master.csv = attributes of each geographic region (for plotting by color, etc.)
 
 Rmkd-final.rmd = R Markdown file of all analyses and plots for the paper
 
-Rmkd-final = knitted output of Markdown file
+Rmkd-final.html = knitted output of Markdown file
 
 
