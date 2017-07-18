@@ -1,0 +1,33 @@
+ord	state	reg7.cat
+1	Aguascalientes	North
+2	Baja California	North Pacific
+3	Baja California Sur	North Pacific
+4	Campeche	Yucatan
+5	Chiapas	South
+6	Chihuahua	North
+7	Coahuila	North
+8	Colima	Central Pacific
+9	Durango	North
+10	Guanajuato	Central Highlands
+11	Guerrero	South
+12	Hidalgo	Central Highlands
+13	Jalisco	Central Pacific
+14	Mexico	Central Highlands
+15	Mexico City	Central Highlands
+16	Michoacan	Central Pacific
+17	Morelos	Central Highlands
+18	Nayarit	Central Pacific
+19	Nuevo Leon	North
+20	Oaxaca	South
+21	Puebla	Central Highlands
+22	Queretaro	Central Highlands
+23	Quintana Roo	Yucatan
+24	San Luis Potosi	North
+25	Sinaloa	North Pacific
+26	Sonora	North Pacific
+27	Tabasco	Gulf Coast
+28	Tamaulipas	Gulf Coast
+29	Tlaxcala	Central Highlands
+30	Veracruz	Gulf Coast
+31	Yucatan	Yucatan
+32	Zacatecas	North

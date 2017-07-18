@@ -1,0 +1,774 @@
+---
+title: "MxMonks Final"
+author: "Liz Hobson"
+date: "July 17, 2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+```{r, echo=FALSE}
+library(scales)
+library(zoo)
+library(plotrix)
+library(maps)
+library(mapproj)
+library(maptools)
+library(sp)
+library(reshape2)
+library(lubridate)
+library(plyr)
+library(dplyr)
+```
+
+
+## Import parsed trade & citizen science data
+Set location for getting data
+```{r, echo=TRUE}
+LOC.finaldata <- "C:/Users/ehobs/Dropbox/P-monk MX invasion/MX-Monks/PLOSONE_FINAL_DATA/"
+
+#NEW CITES DATA:CITES-new28Feb
+cites <- read.csv(file=paste(LOC.finaldata, "cites_imports.csv", sep=""))
+
+dgvs <- read.csv(file=paste(LOC.finaldata, "dgvs_imports.csv", sep=""))
+
+citsci <- read.csv(file=paste(LOC.finaldata, "citizen_science_reports.csv", sep=""))
+
+# add dummy shipment counter to DGVS data
+dgvs$shipment.counter <- 1
+dgvs$shipment.counter[dgvs$year==2015] <- 0
+# check
+
+str(cites)
+str(dgvs)
+str(citsci)
+
+```
+
+## SUMMARIZE CITES DATA 
+(already subset, so purpose = live, Term = "T" for commercial)
+
+```{r, echo=TRUE}
+# summarize number imported indivs X reporter type per year, per purpose
+grouped.MX <- group_by(cites, Year)
+cites.summXyear <- as.data.frame(summarise(grouped.MX, 
+                                            CITESindivsXIMreps=sum(Importer.reported.quantity, na.rm=TRUE),
+                                            CITESindivsXEXreps=sum(Exporter.reported.quantity, na.rm=TRUE)
+                                            )) 
+
+cites.summXyear <- arrange(cites.summXyear, Year)
+str(cites.summXyear)
+
+cites.summXyear$CITESmin.rep <- pmin(cites.summXyear$CITESindivsXIMreps, cites.summXyear$CITESindivsXEXreps) # return minimum reported import quantity
+cites.summXyear$CITESmax.rep <- pmax(cites.summXyear$CITESindivsXIMreps, cites.summXyear$CITESindivsXEXreps) # return maximum reported import quantity
+cites.summXyear$CITESdiff.reps <- cites.summXyear$CITESmax.rep - cites.summXyear$CITESmin.rep # return difference between maximum and minimum reported import quantity
+
+```
+
+# set up blank dataframe to fill with answers to summary questions
+Want historical perspective on CITES data that we can't get from DGVS
+
+```{r, echo=FALSE}
+summary<- data.frame(question=character(),
+                      answer=as.numeric(),
+                      stringsAsFactors=FALSE) 
+```
+
+```{r, echo=TRUE}
+q3 <- cbind("q3", "what is max difference between importer and exporter reports?","CITES",
+      max(cites.summXyear$CITESdiff.reps))
+
+q3b <- cbind("q3b", "what is total diff btw importer and exporter report #s?","CITES",
+      sum(cites.summXyear$CITESindivsXIMreps) - sum(cites.summXyear$CITESindivsXEXreps))
+
+
+q1 <- cbind("q1", "#individuals total were imported for whole dataset? (IMrep)","CITES",
+sum(cites$Importer.reported.quantity, na.rm=TRUE))
+
+q2 <- cbind("q2", "#individuals total were imported for whole dataset? (EXrep)","CITES",
+sum(cites$Exporter.reported.quantity, na.rm=TRUE))
+
+q4 <- cbind("q4", "what is difference between importer reports & exporter reports in # indivs? (from raw df)","CITES",
+            sum(cites$Importer.reported.quantity, na.rm=TRUE) - sum(cites$Exporter.reported.quantity, na.rm=TRUE))
+
+q5 <- cbind("q5", "what is difference between IM&EX reports in # indivs? (summ df)","CITES",
+sum(cites.summXyear$CITESindivsXIMreps) - sum(cites.summXyear$CITESindivsXEXreps)) #check, this and q4 should be same
+
+q6a <- cbind("q6a", "imported reports are xx% of exported reports? (raw df)","CITES",
+  round(sum(cites$Importer.reported.quantity, na.rm=TRUE) / sum(cites$Exporter.reported.quantity, na.rm=TRUE) *100,0))
+
+q6b <- cbind("q6b", "imported reports are xx% of exported reports? (fr summ df)","CITES",
+round((sum(cites.summXyear$CITESindivsXIMreps) / sum(cites.summXyear$CITESindivsXEXreps)) *100, 0))
+
+q7 <- cbind("q7", "what year (1975-2015) did first imports occur?","CITES",
+min(cites$Year, na.rm=TRUE))
+
+q8 <- cbind("q8", "what year (1975-2015) did last imports occur?","CITES",
+max(cites$Year, na.rm=TRUE))
+
+# find earlier imports, before 2000 (ie to end of 1999)
+cites.b42000 <- subset(cites, Year<2000)
+
+q9 <- cbind("q9", "#indivs commercially imported b4 2000 (ie by end of 1999? (IM.reported)","CITES",
+sum(cites.b42000$Importer.reported.quantity, na.rm=TRUE))
+
+q10 <- cbind("q10", "#indivs commercially imported b4 2000 (ie by end of 1999? (EX.reported)","CITES",
+sum(cites.b42000$Exporter.reported.quantity, na.rm=TRUE))
+
+q10a <- cbind("q10a", "%indivs commercially imported b4 2000 (ie by end of 1999? (IN.reported)","CITES",
+round(
+  (sum(cites.b42000$Importer.reported.quantity, na.rm=TRUE)/sum(cites.summXyear$CITESindivsXIMreps))*100,2)
+)
+
+q10b <- cbind("q10b", "%indivs commercially imported b4 2000 (ie by end of 1999? (EX.reported)","CITES",
+round(
+  (sum(cites.b42000$Exporter.reported.quantity, na.rm=TRUE)/sum(cites.summXyear$CITESindivsXEXreps))*100,2)
+)
+
+q10c <- cbind("q10c", "what % of indivs imported btw start2008-end 2015? (IM.rep)","CITES",
+round((sum(cites.summXyear$CITESindivsXIMreps[cites.summXyear$Year>2007]) / sum(cites.summXyear$CITESindivsXIMreps)) *100,0))
+
+q11 <- cbind("q11", "what % of indivs imported between 2008-end 2015? (EX.rep)","CITES",
+round((sum(cites.summXyear$CITESindivsXEXreps[cites.summXyear$Year>2007]) / sum(cites.summXyear$CITESindivsXEXreps)) *100,0))
+
+q11a <- cbind("q11a", "how many indivs imported 2000-end 2015? (IM.rep)","CITES",
+sum(cites.summXyear$CITESindivsXIMreps[cites.summXyear$Year>1999]))
+
+q11b <- cbind("q11b", "how many indivs imported 2000-end 2015? (EX.rep)","CITES",
+sum(cites.summXyear$CITESindivsXEXreps[cites.summXyear$Year>1999]))
+```
+
+### get total # individuals from each exporting country to MX for live commercial exports
+```{r, echo=TRUE}
+grouped.origins <- group_by(cites, Year, Exporter)
+cites.summXcountryXyear <- as.data.frame(summarise(grouped.origins,  
+                                            nindivsXimporterreps=sum(Importer.reported.quantity, na.rm=TRUE), 
+                                            nindivsXexporterreps=sum(Exporter.reported.quantity, na.rm=TRUE)
+                                            ))
+```
+
+### of TOTAL historical exports (commercial/live to MX, CITES), what % individuals came from each exporting country?
+```{r, echo=TRUE}
+grouped.origins2 <- group_by(cites, Exporter)
+cites.summXcountry <- as.data.frame(summarise(grouped.origins2,  
+                                            nindivsXimporterreps=sum(Importer.reported.quantity, na.rm=TRUE), 
+                                            nindivsXexporterreps=sum(Exporter.reported.quantity, na.rm=TRUE)
+                                            ))
+
+cites.summXcountry$percent.indivs.exportedIMreps <- round((cites.summXcountry$nindivsXimporterreps / sum(cites.summXcountry$nindivsXimporterreps)*100),0)
+cites.summXcountry$percent.indivs.exportedEXreps <- round((cites.summXcountry$nindivsXexporterreps / sum(cites.summXcountry$nindivsXexporterreps)*100),0)
+as.data.frame(t(cites.summXcountry))
+```
+             
+### how many unique countries were commercial/live exporters to MX?
+```{r}
+unique(cites$Exporter)
+length(unique(cites$Exporter)) 
+```
+
+### More import questions
+```{r}
+str(cites.summXcountry)
+q12 <- cbind("q12", "#indivs that originated from Uruguay for whole history? (IM.rep)", "CITES",
+cites.summXcountry$nindivsXimporterreps[cites.summXcountry$Exporter=="UY"])
+
+q13 <- cbind("q13", "#indivs that originated from Uruguay for whole history? (EX.rep)", "CITES",
+cites.summXcountry$nindivsXexporterreps[cites.summXcountry$Exporter=="UY"])
+
+q14 <- cbind("q14", "diff btw IM&EX #indivs from Uruguay whole history?", "CITES",
+cites.summXcountry$nindivsXimporterreps[cites.summXcountry$Exporter=="UY"] - cites.summXcountry$nindivsXexporterreps[cites.summXcountry$Exporter=="UY"])
+
+q15 <- cbind("q15", "diff % IMvsEX #indivs from Uruguay whole history?", "CITES",
+round((cites.summXcountry$nindivsXimporterreps[cites.summXcountry$Exporter=="UY"] / cites.summXcountry$nindivsXexporterreps[cites.summXcountry$Exporter=="UY"])*100,0)
+)
+```
+
+
+# SUMMARIZE DGVS DATA
+
+### summary questions: number individuals imported (data from DGVS)
+```{r}
+q16 <- cbind("q16", "#individuals total commercially imported (whole dataset)?", "DGVS",
+sum(dgvs$quantity))
+
+q17 <- cbind("q17", "between which years? start", "DGVS",
+min(dgvs$year))
+
+q18 <- cbind("q18", "between which years? end", "DGVS",
+max(dgvs$year))
+
+#subset, find data start 2008 to end 2015
+DGVS.2008to2015 <- subset(dgvs, year>2007)
+
+q19 <- cbind("q19", "how many individuals total were imported beginning 2008 to end 2015?", "DGVS",
+sum(DGVS.2008to2015$quantity))
+
+q20 <- cbind("q20", "what % of total imported individuals were imported between 2008 and end of 2014?", "DGVS",
+round((sum(DGVS.2008to2015$quantity) / sum(dgvs$quantity)) *100,0))
+```
+
+## summarize # shipments imported
+```{r}
+q22 <- cbind("q22", "how many commercial shipments total were imported 1999 to 2015?", "DGVS",
+sum(dgvs$shipment.counter))
+
+q23 <- cbind("q23", "how many shipments total were imported beginning 2008 to end of 2015?", "DGVS",
+sum(DGVS.2008to2015$shipment.counter))
+
+q24 <- cbind("q24", "what % of total imported individuals were imported between 2008 and end of 2014?", "DGVS",
+round((sum(DGVS.2008to2015$shipment.counter) / sum(dgvs$shipment.counter)) *100,0))
+
+```
+
+## summarize # indivs X year, # shipments X year
+```{r, echo=TRUE}
+str(DGVS.2008to2015)
+str(dgvs)
+
+# get total # individuals and # shipments from each exporting country to MX for live commercial exports
+G.origins <- group_by(dgvs, year, origin.country)
+DGVS.shipsXcountryXyr <- as.data.frame(summarise(G.origins, total.shipments=sum(shipment.counter), total.indivs=sum(quantity)))
+
+
+q25 <- cbind("q25", "how many unique countries were commercial/live exporters to MX? (country of origin) (2000-2015)", "DGVS",
+length(unique(DGVS.shipsXcountryXyr$origin.country)))
+
+unique(DGVS.shipsXcountryXyr$origin.country)
+str(DGVS.shipsXcountryXyr)
+```
+
+### of TOTAL DGVS-reported imports (commercial/live to MX), what % individuals came from each exporting country (2000-2015)?
+```{r, echo=TRUE}
+grouped.exports.DGVS <- group_by(DGVS.shipsXcountryXyr, origin.country)
+DGVS.shipsXcountry <- as.data.frame(summarise(grouped.exports.DGVS, total.shipments=sum(total.shipments), total.indivs=sum(total.indivs)))
+DGVS.shipsXcountry$percent.indivs.exported <- round((DGVS.shipsXcountry$total.indivs / sum(DGVS.shipsXcountry$total.indivs)*100),0)
+DGVS.shipsXcountry$percent.ships.exported <- round((DGVS.shipsXcountry$total.shipments / sum(DGVS.shipsXcountry$total.shipments)*100),0)
+str(DGVS.shipsXcountry)
+```
+
+### of TOTAL start 2008- end 2015 exports (commercial/live to MX), what % individuals came from each exporting country?
+
+```{r, echo=TRUE}
+DGVS.export.countries.2008to2015 <- subset(DGVS.shipsXcountryXyr, year>2007 & total.shipments>0) #exclude the dummy "0" shipment without origin country
+str(DGVS.export.countries.2008to2015)
+Gr.exports.DGVS.2008to2015 <- group_by(DGVS.export.countries.2008to2015, origin.country)
+DGVS.export.countries.2008to2015.summ <- as.data.frame(summarise(Gr.exports.DGVS.2008to2015, total.shipments=sum(total.shipments), total.indivs=sum(total.indivs)))
+
+DGVS.export.countries.2008to2015.summ$percent.indivs.exported <- round((DGVS.export.countries.2008to2015.summ$total.indivs / sum(DGVS.export.countries.2008to2015.summ$total.indivs)*100),0)
+
+DGVS.export.countries.2008to2015.summ$percent.ships.exported <- round((DGVS.export.countries.2008to2015.summ$total.shipments / sum(DGVS.export.countries.2008to2015.summ$total.shipments)*100),0)
+
+str(DGVS.export.countries.2008to2015.summ)
+```
+
+### get total # individuals and # shipments from across all exporting countrys to MX for live commercial exports
+
+```{r, echo=TRUE}
+G.nindivsXyear <- group_by(dgvs, year)
+DGVS.nindivsXyear <- as.data.frame(summarise(G.nindivsXyear, total.DGVS.shipments=sum(shipment.counter), total.DGVS.total.indivs=sum(quantity)))
+str(DGVS.nindivsXyear)
+```
+
+## Compile trade data DGVS + CITES
+
+```{r, echo=TRUE}
+str(cites.summXyear)
+str(DGVS.nindivsXyear) 
+
+TRADExYR.compiled <- merge(cites.summXyear, DGVS.nindivsXyear, by.x="Year", by.y="year", all=TRUE, fill=0)
+#TRADExYR.compiled[is.na(TRADExYR.compiled)] <- 0
+str(TRADExYR.compiled)
+
+TRADExYR.compiled$CITESindivsXIMreps[is.na(TRADExYR.compiled$CITESindivsXIMreps)] <- 0
+TRADExYR.compiled$CITESindivsXEXreps[is.na(TRADExYR.compiled$CITESindivsXEXreps)] <- 0
+TRADExYR.compiled$CITESmin.rep[is.na(TRADExYR.compiled$CITESmin.rep)] <- 0
+TRADExYR.compiled$CITESmax.rep[is.na(TRADExYR.compiled$CITESmax.rep)] <- 0
+TRADExYR.compiled$CITESdiff.reps[is.na(TRADExYR.compiled$CITESdiff.reps)] <- 0
+
+TRADExYR.compiled$diffimportsDGVSxCITES.IM <- TRADExYR.compiled$total.DGVS.total.indivs - TRADExYR.compiled$CITESindivsXIMreps
+TRADExYR.compiled$which.higher <- ifelse(TRADExYR.compiled$total.DGVS.total.indivs > TRADExYR.compiled$CITESindivsXIMreps, "DGVS higher", ifelse(TRADExYR.compiled$total.DGVS.total.indivs==TRADExYR.compiled$CITESindivsXIMreps, "same", ifelse(TRADExYR.compiled$total.DGVS.total.indivs<TRADExYR.compiled$CITESindivsXIMreps,"lower", "no data")))
+
+TRADExYR.compiled$which.higher[is.na(TRADExYR.compiled$which.higher)] <- "NO DATA"
+
+str(TRADExYR.compiled)
+
+
+#subset X year
+TRADExYR.compiled.1999toend2015 <- subset(TRADExYR.compiled, Year>1998 & Year <2016)
+TRADExYR.compiled.2000toend2015 <- subset(TRADExYR.compiled, Year>1999 & Year <2016)
+TRADExYR.compiled.1999toend2014 <- subset(TRADExYR.compiled.1999toend2015, Year<2015)
+```
+
+# compare DGVS with CITES data
+```{r}
+q26 <- cbind("q26", "how many years did CITES imported-reported number match DGVS?", "DGVS v CITES.IM",
+yrs.DGVS.same <- length(TRADExYR.compiled.2000toend2015$which.higher[TRADExYR.compiled.2000toend2015$which.higher=="same"]))
+yrs.DGVS.same #number of years of match
+total.yrs <- 2015-2000
+
+q27 <- cbind("q27", "what % years did CITES imported-reported number match DGVS?", "DGVS v CITES.IM",
+round(yrs.DGVS.same / total.yrs *100, 0))
+
+q28 <- cbind("q28", "total imported individuals DGVS reported start 2000 to end 2015?", "DGVS",
+total.DGVS <- sum(TRADExYR.compiled.2000toend2015$total.DGVS.total.indivs))
+total.DGVS
+
+q28 <- cbind("q28", "total imported individuals CITES.IM reported start 2000 to end 2015?", "CITES.IM",
+total.CITES.IM <- sum(TRADExYR.compiled.2000toend2015$CITESindivsXIMreps))
+total.CITES.IM
+
+q29 <- cbind("q29", "what is total discrepancy: CITES-importer minus DGVS reported?", "DGVS v CITES.IM",
+total.CITES.IM - total.DGVS)
+
+q29a <- cbind("q29a", "what is total discrepancy: CITES-exporter(2000-2015) minus DGVS reported?", "DGVS v CITES.IM",
+total.DGVS - sum(TRADExYR.compiled.2000toend2015$CITESindivsXEXreps))
+
+q30 <- cbind("q30", "how many DGVS shipments occured start 2000 to end 2015?", "DGVS",
+total.DGVS.shipments <- sum(TRADExYR.compiled.2000toend2015$total.shipments.DGVS))
+total.DGVS.shipments
+```
+
+## Compile summary of answers to trade questions
+```{r, echo=TRUE}
+summary <- as.data.frame(rbind(q1,q2,q3,q3b,q4,q5,q6a,q6b,q7,q8,q9,q10,q10a,q10b,q10c,q11,q11a,q11b,q13,q14,q15,q16,q17,q18,q19,q20,q22,q23,q24,q25,q26,q27,q28,q29, q30)) #exclude 12 and 21
+
+colnames(summary) <- c("Qid", "question", "data", "answer")
+str(summary)
+
+```
+
+# SUMMARIZE CITIZEN SCIENCE REPORTS
+```{r, echo=TRUE}
+str(citsci)
+str(citsci)
+
+#set date as.Date
+citsci$date <- as.Date(citsci$date)
+citsci$year <- year(citsci$date)
+citsci$report.dummy <- 1
+
+############## Basic stats on full DB (good date/loc, pre-2016)
+min(citsci$date) # what was date of first report in cit sci database?
+max(citsci$date) # what was date of last report in cit sci database?
+length(citsci$date) # how many reports were filed?
+length(unique(citsci$date)) # how many unique dates had reports?
+
+citsci[which.min(citsci$date),] #extract earliest record
+
+# get list of all unique cities where monks observed before 2016 
+#(check city/state combos to make sure there aren't more "La Paz"s hiding, ie duplicate city names)
+list.unique.citiesstates <- unique(citsci[c("city", "state")])
+list.unique.cities <- unique(citsci$city)
+list.unique.states <- unique(citsci$state)
+
+#total number unique cities (should be same for both calls, and =93)
+length(list.unique.citiesstates$city)
+length(list.unique.cities)
+
+# get list of average location of obs X city using [DATA.trim] & [list.unique.citiesstates]
+
+G.locs <- group_by(citsci, city, state)
+avg.city.loc.MASTER <- as.data.frame(summarise(G.locs, avg.cityLAT=mean(latitude), avg.cityLOG=mean(longitude)))
+avg.city.loc.MASTER
+
+
+#find # unique cities X year
+citsci.unique.citiesXyr <- unique(citsci[c("year", "city")])
+citsci.unique.citiesXyr$dummy.unique.city <- 1
+unique(is.na(citsci.unique.citiesXyr$city)) # should all be "FALSE" = no missing cities
+
+
+#how many unique cities had reports per year?
+grouped.citys <- group_by(citsci.unique.citiesXyr, year)
+citsci.unique.citiesXyr.summ <- as.data.frame(summarise(grouped.citys, unique.cities=sum(dummy.unique.city)))
+citsci.unique.citiesXyr.summ
+
+#using dplyr, group obs X yr
+grouped <- group_by(citsci, year)
+citsci.reportsXyr <- as.data.frame(summarise(grouped, total.reports=sum(report.dummy)))
+citsci.reportsXyr
+
+#add unique reports X yr to unique cities X yr
+citsciXYRxcityxreports <- cbind(citsci.reportsXyr, citsci.unique.citiesXyr.summ$unique.cities)
+str(citsciXYRxcityxreports)
+names(citsciXYRxcityxreports) <- c("year", "n.citsci.reports", "n.citsci.cities")
+```
+
+## add region data 
+
+```{r, echo=TRUE}
+mx.states.atts <- read.table(file=paste(LOC.finaldata, "mx.states.attributes.txt", sep=""), stringsAsFactors = FALSE, sep = "\t", as.is=T,header=T)
+str(mx.states.atts)
+
+#import MX state names (with and without accents)
+state.names <- read.csv("state.names.csv", sep = ",", as.is=T,header=T)
+str(state.names)
+#import region MASTER
+reg7.master <- read.csv(paste(LOC.finaldata, "reg7.master.csv", sep=""))
+str(reg7.master)
+
+#merge state names with color X region
+statesXregWcols <- merge(mx.states.atts, reg7.master, by="reg7.cat", all.x=T)
+str(statesXregWcols)
+
+statesXregWcols <- merge(statesXregWcols, state.names, by=c("state", "reg7.cat"))
+str(statesXregWcols)
+
+
+#merge state data with citizen science reports to summarize by region
+DATA.reg7 <- merge(citsci, statesXregWcols, by="state", all.x=T)
+
+str(DATA.reg7)
+
+unique(is.na(DATA.reg7$reg7.cat)) #should all be false, no missing data 
+```
+
+## get # reports X city X year
+
+```{r, echo=TRUE}
+#how many citsci reports are there per year per NEW 7 region syst & city?
+grouped.regionXcityXyr <- group_by(DATA.reg7, year, reg7.cat, city, state, reg.order)
+reportsXyrXregionXcity <- as.data.frame(summarise(grouped.regionXcityXyr, total.obsXcityXyr=sum(report.dummy)))
+str(reportsXyrXregionXcity)
+reportsXyrXregionXcity$dummy.XcityreportingXyr <- 1 #adds dummy to count # cities reporting PER YEAR
+```
+
+## how many monk cities are in each new region (7 regs)? NEW: FLIP DATA AROUND, region, state, city X years
+```{r, echo=TRUE}
+CAST.citiesXyrs <- dcast(data=reportsXyrXregionXcity, formula=reg7.cat+reg.order+state+city~year, value.var="total.obsXcityXyr", fill=0)
+CAST.citiesXyrs <- arrange(CAST.citiesXyrs, reg.order, state, city)
+```
+
+
+### now melt 
+```{r, echo=TRUE}
+str(CAST.citiesXyrs)
+#melt(airquality, id.vars = c("month", "day"))
+MELT.citiesXyrs <- melt(data=select(CAST.citiesXyrs, -reg7.cat, -reg.order), id.vars= c("state","city"), variable.name="year", value.name="num.reportsXcity")
+str(MELT.citiesXyrs)
+
+
+MELT.citiesXyrs.no0s <- subset(MELT.citiesXyrs, num.reportsXcity>0)
+str(MELT.citiesXyrs.no0s)
+MELT.citiesXyrs.no0s$year <- as.numeric(as.character(MELT.citiesXyrs.no0s$year))
+MELT.citiesXyrs.no0s <- arrange(MELT.citiesXyrs.no0s, state, city)
+str(MELT.citiesXyrs.no0s)
+```
+
+## add new citation data for dotplot
+```{r, echo=TRUE}
+#import data
+citeMASTER <- read.csv(file=paste(LOC.finaldata, "LIT_citationMASTER.csv", sep=""))
+cite.locsXyrs <- read.csv(file=paste(LOC.finaldata, "LIT_locationsXyears_citations_TRIMMED.csv", sep=""))
+str(cite.locsXyrs)
+
+#add citation field to merge by
+cite.locsXyrs$citation <- paste(cite.locsXyrs$source, cite.locsXyrs$year.published, sep=" ")
+```
+
+## merge id.code for cites with location data, then add need new y axis in cases where cities are in citation data, not in citsci data
+```{r, echo=TRUE}
+locXyrs.citations <- merge(select(citeMASTER, cite.id, citation), cite.locsXyrs, by="citation")
+locXyrs.citations <- arrange(locXyrs.citations, cite.id, year.sighted)
+
+#add y.axis for cities! -- 
+str(locXyrs.citations)
+
+citations.cityXstate <- unique(locXyrs.citations[c("city", "state")])
+str(citations.cityXstate)
+
+citsci.cities <- unique(CAST.citiesXyrs[c("city", "state")])
+str(citsci.cities)
+
+#get unique city / state across citations and citizen science DBs
+pre.MASTER.cities.citsciXcitations <- rbind(citsci.cities, citations.cityXstate)
+
+MASTER.cities.CSciXcites <- unique(pre.MASTER.cities.citsciXcitations[c("city", "state")])
+str(MASTER.cities.CSciXcites) # this is full list of all unique cities in either citsci or citation lists
+```
+
+## add regions back in (by merging on state)
+```{r, echo=TRUE}
+MASTER.cities.CSciXcites.Wstates.Wreg7s <- merge(MASTER.cities.CSciXcites, statesXregWcols, by="state", all.x=TRUE)
+str(MASTER.cities.CSciXcites.Wstates.Wreg7s)
+
+#now set new order
+MASTER.cities.CSciXcites.Wstates.Wreg7s <- arrange(MASTER.cities.CSciXcites.Wstates.Wreg7s, reg.order, state, city)
+
+#now add new y-axis coords
+MASTER.cities.CSciXcites.Wstates.Wreg7s$yPlot.ord.CSciXcites <- seq(1, length(MASTER.cities.CSciXcites.Wstates.Wreg7s$city))
+str(MASTER.cities.CSciXcites.Wstates.Wreg7s)
+
+#now add y-axis coords back to citation data (to control where to plot text ids)
+locXyrs.citations.wCOORDS <- merge(locXyrs.citations, MASTER.cities.CSciXcites.Wstates.Wreg7s, 
+                                   by=c("city", "state"), all.x=TRUE)
+
+locXyrs.citations.wCOORDS <- arrange(locXyrs.citations.wCOORDS, yPlot.ord.CSciXcites, year.sighted) #sort
+
+```
+
+# FIGURE 1: importation and sightings
+
+## process data (combine shipping and citizen science reports)
+```{r, echo=TRUE}
+# merge shipping and citsci reports
+str(citsci.reportsXyr)
+str(TRADExYR.compiled)
+
+trade.citscixyr.COMBO <- merge(TRADExYR.compiled, citsci.reportsXyr, by.x="Year", by.y="year", all.x=TRUE)
+str(trade.citscixyr.COMBO)
+
+#subset X year
+trade.citscixyr.COMBO.1999toend2015 <- subset(trade.citscixyr.COMBO, Year>1998 & Year <2016)
+str(trade.citscixyr.COMBO.1999toend2015)
+
+trade.citscixyr.COMBO.1999toend2014 <- subset(trade.citscixyr.COMBO, Year<2015)
+str(trade.citscixyr.COMBO.1999toend2014)
+```
+
+## PLOT FIGURE 1
+```{r, echo=TRUE}
+plot.new()
+############## set up plot:
+#setwd("C:/Users/ehobs/Dropbox/P-monk MX invasion/MX-Monks/PLOTS/")
+
+###### save plot as SVG to mod in inkscape
+#svg("SVGfig.shipsXsightings.LaPaz.fixed.ships.fixed.svg", width=7, height=7)
+
+###################################### shipping plot CITES range of import reports vs export reports, now plot as range rectangles? (plot on bottom)
+par(mfrow=c(2,1), mar=c(5,8,2,2))
+with(trade.citscixyr.COMBO.1999toend2015, plot(Year, total.reports, las=2, xlim=c(1999, 2015), ylim=c(0,150000), ylab=NA, type="n", axes=F ))
+# add lines for change in regs/bird flu
+
+# add axes
+axis(side = 1, at = seq(min(trade.citscixyr.COMBO.1999toend2015$Year), max(trade.citscixyr.COMBO.1999toend2015$Year), by=1), las=2)
+axis(side = 2, las=2)
+box()
+
+abline(v=2008, lty=1, lwd=2, col=alpha("black", 0.2), xpd=F) 
+abline(v=2014, lty=1, lwd=2, col=alpha("black", 0.2), xpd=F)
+
+#underplot rectangles
+rect(xleft=trade.citscixyr.COMBO.1999toend2015$Year-0.25, ybottom=trade.citscixyr.COMBO.1999toend2015$CITESmin.rep, 
+     xright=trade.citscixyr.COMBO.1999toend2015$Year+0.25, ytop=trade.citscixyr.COMBO.1999toend2015$CITESmax.rep,
+     col = "grey", border = alpha("black", 0.3), lwd=2)
+
+#################################### overplot DGVS data
+
+# SHIPPING PLOT [Rcode-shipments] DGVS data (X shipments)
+
+#overplot data
+lines(trade.citscixyr.COMBO.1999toend2015$Year, trade.citscixyr.COMBO.1999toend2015$total.DGVS.total.indivs, type="l", lwd=1.5, xpd=F)
+points(trade.citscixyr.COMBO.1999toend2014$Year, trade.citscixyr.COMBO.1999toend2014$total.DGVS.total.indivs, las=2, 
+       ylab=NA, cex=0.8, 
+       pch=21, col="black", bg="black", xpd=F)
+
+
+title(ylab = "Total individuals", cex.lab = 1, line = 4.5)
+text(x=trade.citscixyr.COMBO.1999toend2015$Year, y=trade.citscixyr.COMBO.1999toend2015$total.DGVS.total.indivs+10000, 
+     trade.citscixyr.COMBO.1999toend2015$total.DGVS.shipments, cex=0.75, srt=0, adj=0.5)
+
+text(x=1999, y=140000, "Text labels = Number of shipments", cex=0.85, srt=0, adj=0)
+mtext("(a)", side = 3, line = 0, outer = FALSE, cex = 1)
+
+
+# SIGHTINGS PLOT [Rcode-sightings(newEbirddata)]
+
+#str(reportsXyr)
+#plot points, no axes
+plot(trade.citscixyr.COMBO.1999toend2015$Year, trade.citscixyr.COMBO.1999toend2015$total.reports, type="o", las=3, lwd=1.5, pch=23, col="black", bg="grey", cex=1.0, axes = FALSE, xlab="Year", ylab=NA, xlim=c(min(trade.citscixyr.COMBO.1999toend2015$Year), max(trade.citscixyr.COMBO.1999toend2015$Year)), ylim=c(0,1300))
+
+#add vertical line markers
+abline(v=2008, lty=1, lwd=2, col=alpha("black", 0.2), xpd=F) 
+abline(v=2014, lty=1, lwd=2, col=alpha("black", 0.2), xpd=F)
+# add axes
+axis(side = 1, at = seq(min(trade.citscixyr.COMBO.1999toend2015$Year), max(trade.citscixyr.COMBO.1999toend2015$Year), by=1), las=2)
+axis(side = 2, las=2)
+title(ylab = "Number of sightings", cex.lab = 1, line = 4.5)
+box()
+
+#add text labels for # unique cities (unique.cities)
+text(x=trade.citscixyr.COMBO.1999toend2015$Year, y=trade.citscixyr.COMBO.1999toend2015$total.reports+100, 
+     trade.citscixyr.COMBO.1999toend2015$total.reports, cex=0.75, srt=0, adj=0.5)
+text(x=1999, y=1200, "Text labels = Number of cities with reports", cex=0.85, srt=0, adj=0)
+
+mtext("(b)", side = 3, line = 0, outer = FALSE, cex = 1)
+#dev.off()
+```
+
+# FIGURE 2: Map of invaded cities in Mexico
+tutorial: https://www.students.ncl.ac.uk/keith.newman/r/maps-in-r-using-gadm
+
+download shapes here: http://www.gadm.org/download -- level 1
+
+## Import data
+```{r, echo=TRUE}
+
+mx.shapes <- readRDS(file=paste(LOC.finaldata, "MEX_adm1.rds", sep=""))
+
+str(statesXregWcols)
+
+all.states <- arrange(statesXregWcols, names.w.accents)
+str(all.states)
+
+
+lit.cities <- read.csv(file=paste(LOC.finaldata, "cities.frLIT.csv", sep=""))
+str(lit.cities)
+```
+
+
+## PLOT FIG 2
+```{r, echo=TRUE}
+plot.new()
+#svg("SVGfig.MAP.sightsXregionWlit.cities.svg", width=7, height=6)
+plot(mx.shapes,col=alpha(all.states$col.names, 0.5), border = 'white') 
+map.axes(cex.axis=0.75)
+
+#plot city location where observations reported any time 1999-2015, use average lat/long for obs X city
+points(avg.city.loc.MASTER$avg.cityLOG,avg.city.loc.MASTER$avg.cityLAT, #LONG. goes 1st
+       col=alpha("black", 0.9), 
+       bg=alpha("black", 0.5), pch=21, cex=1.1) 
+
+#add extra cities not on citizen science data, but ARE in cited literature
+points(lit.cities$long,lit.cities$lat, #LONG. goes 1st
+       col=alpha("black", 0.9), 
+       bg=alpha("black", 0.5), pch=21, cex=1.1)
+
+
+#reg7.master #for legend
+legdtxt <- reg7.master$reg7.cat
+legdcol <- reg7.master$col.names
+
+legend("bottomleft", # position
+       legend = legdtxt, 
+       title = "Regions",
+       cex = 0.75,
+       pch=21,
+       pt.cex = 1.8,
+       col = alpha(legdcol, 1), pt.bg = alpha(legdcol, 0.5),
+       bty = "n",
+       y.intersp=1.1)
+#dev.off()
+
+```
+
+
+
+# FIGURE 3: dotplot of observations by city (grouped by region)
+
+## prepare data
+```{r, echo=TRUE}
+#now add this new y-coord back to dcasted cit.sci data above and re-melt?
+# use MELT.citiesXyrs.no0s from above, need all cit.sci data = TRUE match (don't need all MASTER cities to match, use that to plot axes/text)
+MELT.citiesXyrs.no0s.wPLOTORD <- merge(MELT.citiesXyrs.no0s, MASTER.cities.CSciXcites.Wstates.Wreg7s, by=c("city", "state"), all.x=TRUE)
+
+#check # records should be same -- looks good! both 175 records
+str(MELT.citiesXyrs.no0s)
+str(MELT.citiesXyrs.no0s.wPLOTORD) #use this now to plot dotplot (has new y coords to allow extra lines for citation-only reported cities)
+
+
+#find unique x axis (years)
+year.labs <- as.data.frame(unique(MELT.citiesXyrs.no0s.wPLOTORD$year))
+names(year.labs) <- "year"
+year.labs <- arrange(year.labs, year)
+str(year.labs)
+#unique(df[c("yad", "per")])
+city.labs.new <- unique(MELT.citiesXyrs.no0s.wPLOTORD[c("yPlot.ord.CSciXcites", "city")])
+city.labs.new <- arrange(city.labs.new, yPlot.ord.CSciXcites) #sort by y axis coords
+length(MASTER.cities.CSciXcites.Wstates.Wreg7s$city)
+
+#get all 7 regions with avg reg.order to add reg labels at right spots as axis labels
+GRxreg.plotlabs <- group_by(MELT.citiesXyrs.no0s.wPLOTORD, reg7.cat, reg.order)
+SUMxreg.plotlabs <- as.data.frame(summarise(GRxreg.plotlabs, avg.reg.plot.ord=mean(yPlot.ord.CSciXcites)))
+SUMxreg.plotlabs <- arrange(SUMxreg.plotlabs, reg.order)
+str(SUMxreg.plotlabs)
+
+```
+
+## PLOT DOTPLOT
+
+```{r, echo=TRUE}
+#START PLOT CITIES ON Y
+plot.new()
+#setwd("C:/Users/ehobs/Dropbox/P-monk MX invasion/MX-Monks/PLOTS/")
+#svg("SVGfig.DOTPLOT.sightsXcityXregionWlegnd.Wcitations.svg", width=9, height=11.5)
+
+par(mar=c(5,8,3,12))
+
+plot(MELT.citiesXyrs.no0s.wPLOTORD$year, MELT.citiesXyrs.no0s.wPLOTORD$yPlot.ord.CSciXcites, type="p", axes=F, 
+     ylim=rev(c(1,length(MASTER.cities.CSciXcites.Wstates.Wreg7s$city))), xlim=c(min(year.labs$year), max(year.labs$year)),
+     xlab="Year", ylab=NA,
+     pch=21, col=alpha(MELT.citiesXyrs.no0s.wPLOTORD$col.names, 0.9), bg=alpha(MELT.citiesXyrs.no0s.wPLOTORD$col.names, 0.4), 
+     cex=log(MELT.citiesXyrs.no0s.wPLOTORD$num.reportsXcity)+0.5
+)
+#ADD LITERATURE POINTS
+#points(x=1999, y=52, col="red")
+
+#ADD AXES
+
+axis(4, at=rev(1:length(MASTER.cities.CSciXcites.Wstates.Wreg7s$city)), 
+     labels=rev(MASTER.cities.CSciXcites.Wstates.Wreg7s$city), las=2, cex.axis=0.6)
+axis(1, at=seq(min(year.labs$year), max(year.labs$year)), 
+     labels=seq(min(year.labs$year), max(year.labs$year), by=1),
+     las=2, cex.axis=1)
+#add region labels
+axis(2, at=rev(c(SUMxreg.plotlabs$avg.reg.plot.ord)), labels=rev(SUMxreg.plotlabs$reg7.cat), 
+     las=2, cex.axis=1, lwd.tick=0)
+
+# add lines for start of ban
+abline(v=2008, lty=1, col=alpha("grey", 0.6), lwd=2)
+box()
+
+#add text for citations
+# use locXyrs.citations.Y
+
+text(x=locXyrs.citations.wCOORDS$year.sighted, y=locXyrs.citations.wCOORDS$yPlot.ord.CSciXcites, 
+     labels=locXyrs.citations.wCOORDS$cite.id, col="black", 
+     cex=0.6)
+#col=locXyrs.citations.wCOORDS$col.names,
+
+#add first report (1994-1995 somewhere, in MX City) as 1998.5, then add note for real year
+text(x=1998.5, y=62, 
+     labels="A", col="black", 
+     cex=0.6)
+
+#add key for point sizes
+legdtxt <- c("1", "10", "100")
+legdptcex <- log(as.numeric(c("1", "10", "100")))+0.5
+
+legend("bottomleft", # position
+       legend = legdtxt, 
+       title = "Number of reports",
+       cex = 0.9,
+       pch=21,
+       pt.cex = legdptcex,
+       col = alpha("grey", 0.9), pt.bg = alpha("grey", 0.6),
+       bty = "n",
+       y.intersp=1.1)
+
+#add colored lines in margin for regions
+GR.reg.maxmin.Y <- group_by(MELT.citiesXyrs.no0s.wPLOTORD, reg7.cat, reg.order)
+SUM.reg.maxmin.Y <- as.data.frame(summarise(GR.reg.maxmin.Y, 
+                                                  min.Y=min(yPlot.ord.CSciXcites)-0.3,
+                                                  max.Y=max(yPlot.ord.CSciXcites)+0.3
+                                                  ))
+SUM.reg.maxmin.Y
+SUM.reg.maxmin.Y$x <- 1998
+
+#merge colors from master with point locations
+SUM.reg.maxmin.Y <- merge(SUM.reg.maxmin.Y, select(reg7.master, reg7.cat, col.names), by="reg7.cat")
+SUM.reg.maxmin.Y <- arrange(SUM.reg.maxmin.Y, reg.order)
+
+#add rectangles
+rect(xleft=1998.25-0.1, ybottom=SUM.reg.maxmin.Y$min.Y, 
+     xright=1998.25+0.1, ytop=SUM.reg.maxmin.Y$max.Y,
+     col = alpha(SUM.reg.maxmin.Y$col.names,0.4), border = alpha(SUM.reg.maxmin.Y$col.names,0.9), lty = 1, lwd = 1, xpd=TRUE)
+
+#dev.off()
+
+```
