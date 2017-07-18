@@ -32,7 +32,7 @@ This dataset includes observations of Monk Parakeets observed in Mexico, reporte
 
 We cleaned these data and deleted obvious double-reporting events (i.e. if the same person reported an observation at the same location and date/time to more than one citizen science reporting databases). Based on the location of the observation, we assigned each report to a city/town. We excluded any reports without date/time or location information.
 
-## Supporting data files
+## Other supporting data files
 
 cities.frLIT.csv = list of cities for which there are scientific reports of sightings
 
