@@ -3,8 +3,8 @@ title: "MxMonks Final"
 author: "Liz Hobson"
 date: "July 17, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -338,7 +338,7 @@ total.DGVS.shipments
 summary <- as.data.frame(rbind(q1,q2,q3,q3b,q4,q5,q6a,q6b,q7,q8,q9,q10,q10a,q10b,q10c,q11,q11a,q11b,q13,q14,q15,q16,q17,q18,q19,q20,q22,q23,q24,q25,q26,q27,q28,q29, q30)) #exclude 12 and 21
 
 colnames(summary) <- c("Qid", "question", "data", "answer")
-str(summary)
+summary
 
 ```
 
@@ -374,7 +374,7 @@ length(list.unique.cities)
 
 G.locs <- group_by(citsci, city, state)
 avg.city.loc.MASTER <- as.data.frame(summarise(G.locs, avg.cityLAT=mean(latitude), avg.cityLOG=mean(longitude)))
-avg.city.loc.MASTER
+str(avg.city.loc.MASTER)
 
 
 #find # unique cities X year

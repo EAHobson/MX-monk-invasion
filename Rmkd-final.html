@@ -561,12 +561,115 @@ total.DGVS.shipments</code></pre>
 <pre class="r"><code>summary &lt;- as.data.frame(rbind(q1,q2,q3,q3b,q4,q5,q6a,q6b,q7,q8,q9,q10,q10a,q10b,q10c,q11,q11a,q11b,q13,q14,q15,q16,q17,q18,q19,q20,q22,q23,q24,q25,q26,q27,q28,q29, q30)) #exclude 12 and 21
 
 colnames(summary) &lt;- c(&quot;Qid&quot;, &quot;question&quot;, &quot;data&quot;, &quot;answer&quot;)
-str(summary)</code></pre>
-<pre><code>## 'data.frame':    35 obs. of  4 variables:
-##  $ Qid     : Factor w/ 35 levels &quot;q1&quot;,&quot;q10&quot;,&quot;q10a&quot;,..: 1 16 26 28 29 30 31 32 33 34 ...
-##  $ question: Factor w/ 34 levels &quot;#individuals total commercially imported (whole dataset)?&quot;,..: 3 2 30 31 29 28 22 21 33 34 ...
-##  $ data    : Factor w/ 4 levels &quot;CITES&quot;,&quot;CITES.IM&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
-##  $ answer  : Factor w/ 29 levels &quot;0&quot;,&quot;0.2&quot;,&quot;0.28&quot;,..: 23 19 8 24 24 24 5 5 9 11 ...</code></pre>
+summary</code></pre>
+<pre><code>##     Qid
+## 1    q1
+## 2    q2
+## 3    q3
+## 4   q3b
+## 5    q4
+## 6    q5
+## 7   q6a
+## 8   q6b
+## 9    q7
+## 10   q8
+## 11   q9
+## 12  q10
+## 13 q10a
+## 14 q10b
+## 15 q10c
+## 16  q11
+## 17 q11a
+## 18 q11b
+## 19  q13
+## 20  q14
+## 21  q15
+## 22  q16
+## 23  q17
+## 24  q18
+## 25  q19
+## 26  q20
+## 27  q22
+## 28  q23
+## 29  q24
+## 30  q25
+## 31  q26
+## 32  q27
+## 33  q28
+## 34  q29
+## 35  q30
+##                                                                                           question
+## 1                                      #individuals total were imported for whole dataset? (IMrep)
+## 2                                      #individuals total were imported for whole dataset? (EXrep)
+## 3                                    what is max difference between importer and exporter reports?
+## 4                                          what is total diff btw importer and exporter report #s?
+## 5        what is difference between importer reports &amp; exporter reports in # indivs? (from raw df)
+## 6                                  what is difference between IM&amp;EX reports in # indivs? (summ df)
+## 7                                           imported reports are xx% of exported reports? (raw df)
+## 8                                       imported reports are xx% of exported reports? (fr summ df)
+## 9                                                   what year (1975-2015) did first imports occur?
+## 10                                                   what year (1975-2015) did last imports occur?
+## 11                         #indivs commercially imported b4 2000 (ie by end of 1999? (IM.reported)
+## 12                         #indivs commercially imported b4 2000 (ie by end of 1999? (EX.reported)
+## 13                         %indivs commercially imported b4 2000 (ie by end of 1999? (IN.reported)
+## 14                         %indivs commercially imported b4 2000 (ie by end of 1999? (EX.reported)
+## 15                                      what % of indivs imported btw start2008-end 2015? (IM.rep)
+## 16                                       what % of indivs imported between 2008-end 2015? (EX.rep)
+## 17                                                how many indivs imported 2000-end 2015? (IM.rep)
+## 18                                                how many indivs imported 2000-end 2015? (EX.rep)
+## 19                                #indivs that originated from Uruguay for whole history? (EX.rep)
+## 20                                              diff btw IM&amp;EX #indivs from Uruguay whole history?
+## 21                                               diff % IMvsEX #indivs from Uruguay whole history?
+## 22                                       #individuals total commercially imported (whole dataset)?
+## 23                                                                      between which years? start
+## 24                                                                        between which years? end
+## 25                            how many individuals total were imported beginning 2008 to end 2015?
+## 26                what % of total imported individuals were imported between 2008 and end of 2014?
+## 27                                 how many commercial shipments total were imported 1999 to 2015?
+## 28                           how many shipments total were imported beginning 2008 to end of 2015?
+## 29                what % of total imported individuals were imported between 2008 and end of 2014?
+## 30 how many unique countries were commercial/live exporters to MX? (country of origin) (2000-2015)
+## 31                                   how many years did CITES imported-reported number match DGVS?
+## 32                                     what % years did CITES imported-reported number match DGVS?
+## 33                            total imported individuals CITES.IM reported start 2000 to end 2015?
+## 34                                  what is total discrepancy: CITES-importer minus DGVS reported?
+## 35                                         how many DGVS shipments occured start 2000 to end 2015?
+##               data answer
+## 1            CITES 591313
+## 2            CITES 531670
+## 3            CITES  15000
+## 4            CITES  59643
+## 5            CITES  59643
+## 6            CITES  59643
+## 7            CITES    111
+## 8            CITES    111
+## 9            CITES   1981
+## 10           CITES   2014
+## 11           CITES   1167
+## 12           CITES   1494
+## 13           CITES    0.2
+## 14           CITES   0.28
+## 15           CITES     91
+## 16           CITES     90
+## 17           CITES 590146
+## 18           CITES 530176
+## 19           CITES 516210
+## 20           CITES  57850
+## 21           CITES    111
+## 22            DGVS 583046
+## 23            DGVS   2000
+## 24            DGVS   2015
+## 25            DGVS 528766
+## 26            DGVS     91
+## 27            DGVS    370
+## 28            DGVS    324
+## 29            DGVS     88
+## 30            DGVS      4
+## 31 DGVS v CITES.IM     11
+## 32 DGVS v CITES.IM     73
+## 33        CITES.IM 590146
+## 34 DGVS v CITES.IM   7100
+## 35            DGVS      0</code></pre>
 </div>
 </div>
 <div id="summarize-citizen-science-reports" class="section level1">
@@ -625,101 +728,12 @@ length(list.unique.citiesstates$city)</code></pre>
 
 G.locs &lt;- group_by(citsci, city, state)
 avg.city.loc.MASTER &lt;- as.data.frame(summarise(G.locs, avg.cityLAT=mean(latitude), avg.cityLOG=mean(longitude)))
-avg.city.loc.MASTER</code></pre>
-<pre><code>##                           city               state avg.cityLAT avg.cityLOG
-## 1               Aguascalientes      Aguascalientes    21.85580  -102.31702
-## 2         Ahualulco de Mercado             Jalisco    20.70390  -103.98373
-## 3                       Ajijic             Jalisco    20.29648  -103.26449
-## 4                      Allende            Coahuila    28.33537  -100.86123
-## 5                     Alvarado            Veracruz    18.78028   -95.74505
-## 6             Apaxco de Ocampo              Mexico    19.97811   -99.17526
-## 7                      Apizaco            Tlaxcala    19.41009   -98.14386
-## 8                      Apodaca          Nuevo Leon    25.78811  -100.26433
-## 9                 Boca del Rio            Veracruz    19.15352   -96.10781
-## 10         Cadereyta de Montes           Queretaro    20.69544   -99.81289
-## 11                    Calimaya              Mexico    19.20178   -99.64590
-## 12                      Celaya          Guanajuato    20.50550  -100.80093
-## 13                    Chametla Baja California Sur    24.10343  -110.37192
-## 14                     Chapala             Jalisco    20.29519  -103.18411
-## 15                   Chihuahua           Chihuahua    28.63970  -106.05261
-## 16   Chilpancingo de los Bravo            Guerrero    17.53921   -99.50431
-## 17           Ciudad del Carmen            Campeche    18.64384   -91.80616
-## 18              Ciudad Obregon              Sonora    27.49866  -109.96933
-## 19             Ciudad Victoria          Tamaulipas    23.76115   -99.15801
-## 20          Cuautitlan Izcalli              Mexico    19.70422   -99.22179
-## 21                     Cuautla             Morelos    18.84775   -98.95203
-## 22                  Cuernavaca             Morelos    18.92472   -99.22701
-## 23                     Durango             Durango    23.98322  -104.67898
-## 24         Ecatepec de Morelos              Mexico    19.60184   -99.05067
-## 25               El Centenario Baja California Sur    24.08395  -110.38343
-## 26                 El Pueblito           Queretaro    20.53272  -100.42088
-## 27             Emiliano Zapata             Morelos    18.84173   -99.18325
-## 28                    Ensenada     Baja California    31.84608  -116.60036
-## 29            General Escobedo          Nuevo Leon    25.78943  -100.29426
-## 30                 Guadalajara             Jalisco    20.68987  -103.34847
-## 31              Guerrero Negro Baja California Sur    27.96362  -114.05360
-## 32                  Hermosillo              Sonora    29.08873  -110.95943
-## 33                   Huajuapan              Oaxaca    17.01212   -96.72149
-## 34                    Huilango              Mexico    19.68411   -99.25267
-## 35                    Irapuato          Guanajuato    20.66363  -101.33981
-## 36                  Ixtapaluca              Mexico    19.30258   -98.89626
-## 37             Jalpan de Serra           Queretaro    21.21910   -99.47121
-## 38                       Janos           Chihuahua    30.84053  -108.44577
-## 39                    Jiutepec             Morelos    18.89537   -99.16923
-## 40                   Jocotepec             Jalisco    20.28553  -103.41208
-## 41                 Jose Cardel            Veracruz    19.37001   -96.37793
-## 42                La Paz B.C.S Baja California Sur    24.11842  -110.33757
-## 43                 La Paz Mex.              Mexico    19.34233   -98.95544
-## 44            Las Jarretaderas             Nayarit    20.68637  -105.27879
-## 45                        Leon          Guanajuato    21.15211  -101.67300
-## 46                      Loreto Baja California Sur    26.00792  -111.34163
-## 47                    Mazatlan             Sinaloa    23.23504  -106.43888
-## 48                    Medellin            Veracruz    19.09775   -96.11290
-## 49                     Metepec              Mexico    19.25514   -99.59273
-## 50                    Mexicali     Baja California    32.62451  -115.43489
-## 51                 Mexico City         Mexico City    19.36217   -99.09486
-## 52       Mineral de la Reforma             Hidalgo    20.04753   -98.76874
-## 53                  Montecillo              Mexico    19.46473   -98.90734
-## 54         Naucalpan de Juarez              Mexico    19.49498   -99.21589
-## 55              Nezahualcoyotl              Mexico    19.44183   -99.03171
-## 56              Nicolas Romero              Mexico    19.59962   -99.28644
-## 57              Nuevo Vallarta             Nayarit    20.69239  -105.29238
-## 58                      Oaxaca              Oaxaca    17.06495   -96.72302
-## 59                     Ocotlan             Jalisco    20.31887  -102.77161
-## 60                    Papantla            Veracruz    20.44573   -97.37763
-## 61                      Puebla              Puebla    19.01863   -98.19095
-## 62             Puerto Vallarta             Jalisco    20.64619  -105.23612
-## 63                  Reyes Etla              Oaxaca    17.20566   -96.80813
-## 64                     Sabinas            Coahuila    27.85479  -101.13202
-## 65                    Saltillo            Coahuila    25.42184  -100.99142
-## 66            San Agustin Etla              Oaxaca    17.19393   -96.75728
-## 67          San Andres Cholula              Puebla    19.03708   -98.30574
-## 68       San Antonio de la Cal              Oaxaca    17.04218   -96.70694
-## 69       San Luis Rio Colorado              Sonora    32.47667  -114.76250
-## 70          San Miguel El Alto             Jalisco    20.99097  -102.40282
-## 71                 San Nicolas           Queretaro    20.54412   -99.95423
-## 72      San Pedro Garza Garcia          Nuevo Leon    25.64435  -100.32852
-## 73                    Santa Fe             Jalisco    20.70927  -103.39626
-## 74         Santa Rosa Jauregui           Queretaro    20.73386  -100.45128
-## 75       Santiago de Queretaro           Queretaro    20.59032  -100.41409
-## 76                       Tepic             Nayarit    21.51295  -104.89831
-## 77                 Tepotzotlan              Mexico    19.70894   -99.23264
-## 78               Tequisquiapan           Queretaro    20.52320   -99.92551
-## 79             Texcoco de Mora              Mexico    19.49723   -98.88572
-## 80                Tlalnepantla              Mexico    19.51653   -99.17071
-## 81                     Torreon            Coahuila    25.53834  -103.43117
-## 82            Tuxtla Gutierrez             Chiapas    16.75368   -93.10618
-## 83 Valle de Chalco Solidaridad              Mexico    19.28907   -98.96733
-## 84                    Veracruz            Veracruz    19.16571   -96.11540
-## 85                     Xalapa             Veracruz    19.52324   -96.88982
-## 86                 Xicohtzinco            Tlaxcala    19.17075   -98.23093
-## 87                  Xochitepec             Morelos    18.78352   -99.22996
-## 88                    Yautepec             Morelos    18.90702   -98.98959
-## 89                    Zaachila              Oaxaca    16.94045   -96.72866
-## 90                   Zacatelco            Tlaxcala    19.19848   -98.24864
-## 91                     Zapopan             Jalisco    20.70915  -103.40379
-## 92                    Zempoala             Hidalgo    19.98754   -98.77890
-## 93                    Zumpango              Mexico    19.78609   -99.13788</code></pre>
+str(avg.city.loc.MASTER)</code></pre>
+<pre><code>## 'data.frame':    93 obs. of  4 variables:
+##  $ city       : Factor w/ 93 levels &quot;Aguascalientes&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+##  $ state      : Factor w/ 25 levels &quot;Aguascalientes&quot;,..: 1 12 12 7 25 13 24 17 25 20 ...
+##  $ avg.cityLAT: num  21.9 20.7 20.3 28.3 18.8 ...
+##  $ avg.cityLOG: num  -102.3 -104 -103.3 -100.9 -95.7 ...</code></pre>
 <pre class="r"><code>#find # unique cities X year
 citsci.unique.citiesXyr &lt;- unique(citsci[c(&quot;year&quot;, &quot;city&quot;)])
 citsci.unique.citiesXyr$dummy.unique.city &lt;- 1
