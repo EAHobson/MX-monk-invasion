@@ -2,7 +2,7 @@
 
 This repository contains the data we used in analyses in our paper "History of nonnative Monk Parakeets in Mexico", which will be published in PLOS ONE. Below, we summarize each of the datasets and provide information on how we accessed them.
 
-Citation for published paper: [to be added]
+Citation for published paper: Hobson, E., Smith-Vidaurre, G., Salinas-Melgoza, A. "History of nonnative Monk Parakeets in Mexico". [full citation to be updated on publication]
 
 DOI for dataset: [to be added]
 
