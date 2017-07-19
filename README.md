@@ -4,7 +4,7 @@ This repository contains the data we used in analyses in our paper "History of n
 
 Citation for published paper: Hobson, E., Smith-Vidaurre, G., Salinas-Melgoza, A. "History of nonnative Monk Parakeets in Mexico". [full citation to be updated on publication]
 
-DOI for dataset: [to be added]
+DOI for dataset: [![DOI](https://zenodo.org/badge/97489648.svg)](https://zenodo.org/badge/latestdoi/97489648)
 
 ## CITES International trade data (cites_imports.csv)
 
